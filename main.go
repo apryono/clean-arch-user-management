@@ -2,13 +2,16 @@ package main
 
 import (
 	"LionChallenge/driver"
+	"LionChallenge/login/handler"
+	"LionChallenge/login/repo"
+	"LionChallenge/login/usecase"
 	"LionChallenge/middleware"
 	"log"
 	"net/http"
 
-	"LionChallenge/user/handler"
-	"LionChallenge/user/repo"
-	"LionChallenge/user/usecase"
+	usrH "LionChallenge/user/handler"
+	usrR "LionChallenge/user/repo"
+	usrU "LionChallenge/user/usecase"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -28,9 +31,13 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(middleware.Logging)
 
-	userRepo := repo.CreateUserRepoImpl(db)
-	userUsecase := usecase.CreateUserUsecaseImpl(userRepo)
-	handler.CreateUserHandler(router, userUsecase)
+	userRepo := usrR.CreateUserRepoImpl(db)
+	userUsecase := usrU.CreateUserUsecaseImpl(userRepo)
+	usrH.CreateUserHandler(router, userUsecase)
+
+	loginRepo := repo.CreateLoginRepoImpl(db)
+	loginUsecase := usecase.CreateLoginUsecaseImpl(loginRepo)
+	handler.CreateLoginHandler(router, loginUsecase)
 
 	headerOK := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originOK := handlers.AllowedOrigins([]string{"*"})
