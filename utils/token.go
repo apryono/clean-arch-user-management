@@ -18,7 +18,7 @@ func GenerateToken(user *model.User) (string, error) {
 		Username: user.Username,
 		Email:    user.Email,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		return "", err
