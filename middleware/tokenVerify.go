@@ -11,7 +11,7 @@ import (
 )
 
 // TokenVerifyMiddleware to verify token
-func TokenVerifyMiddleware(next http.Handler) http.Handler {
+func TokenVerifyMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		bearerToken := strings.Split(authHeader, " ")
