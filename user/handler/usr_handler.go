@@ -1,6 +1,7 @@
 package handler
 
 import (
+	mdw "LionChallenge/middleware"
 	"LionChallenge/model"
 	"LionChallenge/user"
 	"LionChallenge/utils"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // UserHandler struct
@@ -20,11 +22,11 @@ type UserHandler struct {
 func CreateUserHandler(r *mux.Router, userUsecase user.UserUsecase) {
 	handler := UserHandler{userUsecase}
 
-	r.HandleFunc("/user", handler.createUser).Methods(http.MethodPost)
-	r.HandleFunc("/user", handler.readAllUser).Methods(http.MethodGet)
-	r.HandleFunc("/user/{id}", handler.readUser).Methods(http.MethodGet)
-	r.HandleFunc("/user/{id}", handler.updateUser).Methods(http.MethodPut)
-	r.HandleFunc("/user/{id}", handler.deleteUser).Methods(http.MethodDelete)
+	r.HandleFunc("/user", mdw.TokenVerifyMiddleware(handler.createUser)).Methods(http.MethodPost)
+	r.HandleFunc("/user", mdw.TokenVerifyMiddleware(handler.readAllUser)).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", mdw.TokenVerifyMiddleware(handler.readUser)).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", mdw.TokenVerifyMiddleware(handler.updateUser)).Methods(http.MethodPut)
+	r.HandleFunc("/user/{id}", mdw.TokenVerifyMiddleware(handler.deleteUser)).Methods(http.MethodDelete)
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, utils.Message(false, "sorry, url not found"))
 		w.WriteHeader(http.StatusNotFound)
@@ -40,6 +42,32 @@ func (conn *UserHandler) createUser(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	if user.Username == "" {
+		utils.Response(w, utils.Message(false, "Username must be filled in"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if user.Email == "" {
+		utils.Response(w, utils.Message(false, "Email must be filled in"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if user.Password == "" {
+		utils.Response(w, utils.Message(false, "Password must be filled in"))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
+	if err != nil {
+		utils.LogError("createUser", "Error when generate password", err)
+		return
+	}
+
+	user.Password = string(hash)
 
 	response, err := conn.userUsecase.Create(user)
 	if err != nil {
